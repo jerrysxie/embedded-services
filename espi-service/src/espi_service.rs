@@ -1,9 +1,10 @@
 use core::cell::RefCell;
+use core::mem::offset_of;
 
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
 use embassy_sync::once_lock::OnceLock;
-use embedded_services::comms::{self, EndpointID, External};
+use embedded_services::comms::{self, EndpointID, External, Internal};
 use embedded_services::{ec_type, error, info};
 
 pub struct Service {
@@ -177,6 +178,173 @@ fn update_time_alarm_section(msg: &ec_type::message::TimeAlarmMessage) {
     });
 }
 
+async fn route_to_service(offset: usize, length: usize) {
+    let mut offset = offset;
+    let mut length = length;
+
+    while length > 0 {
+        if offset >= offset_of!(ec_type::structure::ECMemory, ver)
+            && offset < offset_of!(ec_type::structure::ECMemory, caps)
+        {
+        } else if offset >= offset_of!(ec_type::structure::ECMemory, caps)
+            && offset < offset_of!(ec_type::structure::ECMemory, batt)
+        {
+            //route_to_capabilities_service(&mut offset, &mut length).await;
+        } else if offset >= offset_of!(ec_type::structure::ECMemory, batt)
+            && offset < offset_of!(ec_type::structure::ECMemory, therm)
+        {
+            route_to_battery_service(&mut offset, &mut length).await;
+        } else if offset >= offset_of!(ec_type::structure::ECMemory, therm)
+            && offset < offset_of!(ec_type::structure::ECMemory, alarm)
+        {
+            //route_to_thermal_service(&mut offset, &mut length).await;
+        } else if offset >= offset_of!(ec_type::structure::ECMemory, alarm) {
+            //route_to_time_alarm_service(&mut offset, &mut length).await;
+        }
+    }
+}
+
+async fn route_to_battery_service(offset: &mut usize, length: &mut usize) {
+    let local_offset = *offset - offset_of!(ec_type::structure::ECMemory, batt);
+    let message: Option<ec_type::message::BatteryMessage> = MEMORY_MAP.try_get().unwrap().lock(|memory_map| {
+        let memory_map = memory_map.borrow();
+        if local_offset == offset_of!(ec_type::structure::Battery, events) {
+            let value = memory_map.batt.events;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::Events(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, last_full_charge) {
+            let value = memory_map.batt.last_full_charge;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::LastFullCharge(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, cycle_count) {
+            let value = memory_map.batt.cycle_count;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::CycleCount(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, state) {
+            let value = memory_map.batt.state;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::State(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, present_rate) {
+            let value = memory_map.batt.present_rate;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PresentRate(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, remain_cap) {
+            let value = memory_map.batt.remain_cap;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::RemainCap(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, present_volt) {
+            let value = memory_map.batt.present_volt;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PresentVolt(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, psr_state) {
+            let value = memory_map.batt.psr_state;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PsrState(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, psr_max_out) {
+            let value = memory_map.batt.psr_max_out;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PsrMaxOut(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, psr_max_in) {
+            let value = memory_map.batt.psr_max_in;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PsrMaxIn(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, peak_level) {
+            let value = memory_map.batt.peak_level;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PeakLevel(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, peak_power) {
+            let value = memory_map.batt.peak_power;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PeakPower(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, sus_level) {
+            let value = memory_map.batt.sus_level;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::SusLevel(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, sus_power) {
+            let value = memory_map.batt.sus_power;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::SusPower(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, peak_thres) {
+            let value = memory_map.batt.peak_thres;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::PeakThres(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, sus_thres) {
+            let value = memory_map.batt.sus_thres;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::SusThres(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, trip_thres) {
+            let value = memory_map.batt.trip_thres;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::TripThres(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, bmc_data) {
+            let value = memory_map.batt.bmc_data;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::BmcData(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, bmd_data) {
+            let value = memory_map.batt.bmd_data;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::BmdData(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, bmd_flags) {
+            let value = memory_map.batt.bmd_flags;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::BmdFlags(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, bmd_count) {
+            let value = memory_map.batt.bmd_count;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::BmdCount(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, charge_time) {
+            let value = memory_map.batt.charge_time;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::ChargeTime(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, run_time) {
+            let value = memory_map.batt.run_time;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::RunTime(value));
+        } else if local_offset == offset_of!(ec_type::structure::Battery, sample_time) {
+            let value = memory_map.batt.sample_time;
+            *offset += size_of_val(&value);
+            *length -= size_of_val(&value);
+            return Some(ec_type::message::BatteryMessage::SampleTime(value));
+        }
+        None
+    });
+
+    if let Some(msg) = message {
+        comms::send(
+            EndpointID::External(External::Host),
+            EndpointID::Internal(Internal::Battery),
+            &msg,
+        )
+        .await
+        .unwrap();
+    }
+
+    // TODO error time
+}
+
 use embassy_imxrt::espi;
 
 #[embassy_executor::task]
@@ -207,9 +375,15 @@ pub async fn espi_service(mut espi: espi::Espi<'static>, memory_map_buffer: &'st
         match event {
             Ok(espi::Event::Port0(port_event)) => {
                 info!(
-                    "eSPI Port 0, direction: {}, length: {}, offset: {}",
-                    port_event.direction, port_event.length, port_event.offset,
+                    "eSPI Port 0, direction: {}, offset: {}, length: {}",
+                    port_event.direction, port_event.offset, port_event.length,
                 );
+
+                // If it is a peripheral channel write, then we need to notify the service
+                if port_event.direction {
+                    route_to_service(port_event.offset, port_event.length).await;
+                }
+
                 espi.complete_port(0).await;
             }
             Ok(espi::Event::Port1(_)) => {
