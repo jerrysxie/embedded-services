@@ -122,7 +122,7 @@ jobs:
         with:
           reporter: 'github-pr-check'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: ${{ matrix.workdir }}
+          workdir: ${{ matrix.workdir }}
 
   # Enable once we have a released crate
   # semver:
