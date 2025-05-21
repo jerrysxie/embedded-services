@@ -136,7 +136,21 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    name: ubuntu / stable / test
+    name: ubuntu / stable / test / ${{ matrix.crate }}
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - battery-service
+          - cfu-service
+          - embedded-services
+          - espi-service
+          - hid-service
+          - platform-service
+          - power-button-service
+          - power-policy-service
+          - storage_bus
+          - type-c-service
     steps:
       - uses: actions/checkout@v4
         with:
@@ -144,7 +158,7 @@ jobs:
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo test
-        run: cargo test --locked
+        run: cargo test --locked -p ${{ matrix.crate }}
 
   msrv:
     # check that we can build using the minimal rust version that is specified by this crate
