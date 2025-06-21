@@ -208,6 +208,64 @@ delta = "1.14.0 -> 1.15.0"
 notes = "The delta in `lib.rs` only tweaks doc comments and `#[cfg(feature = \"std\")]`."
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
+[[audits.google.audits.equivalent]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = "safe-to-deploy"
+version = "1.0.1"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.equivalent]]
+who = "Jonathan Hao <phao@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.1 -> 1.0.2"
+notes = "No changes to any .rs files or Rust code."
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.itoa]]
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
+criteria = "safe-to-deploy"
+version = "1.0.10"
+notes = '''
+I grepped for \"crypt\", \"cipher\", \"fs\", \"net\" - there were no hits.
+
+There are a few places where `unsafe` is used.  Unsafe review notes can be found
+in https://crrev.com/c/5350697.
+
+Version 1.0.1 of this crate has been added to Chromium in
+https://crrev.com/c/3321896.
+'''
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.itoa]]
+who = "Lukasz Anforowicz <lukasza@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.10 -> 1.0.11"
+notes = """
+Straightforward diff between 1.0.10 and 1.0.11 - only 3 commits:
+
+* Bumping up the version
+* A touch up of comments
+* And my own PR to make `unsafe` blocks more granular:
+  https://github.com/dtolnay/itoa/pull/42
+"""
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.itoa]]
+who = "Liza Burakova <liza@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.11 -> 1.0.14"
+notes = """
+Unsafe review at https://crrev.com/c/6051067
+"""
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.itoa]]
+who = "Daniel Cheng <dcheng@chromium.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.14 -> 1.0.15"
+notes = "Only minor rustdoc changes."
+aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
+
 [[audits.google.audits.nb]]
 who = "George Burgess IV <gbiv@google.com>"
 criteria = "safe-to-deploy"

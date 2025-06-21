@@ -6,10 +6,25 @@ who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-run"
 version = "0.24.2"
 
+[[audits.aligned]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.4.2"
+
+[[audits.as-slice]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.2.1"
+
 [[audits.backtrace]]
 who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-run"
 version = "0.3.75"
+
+[[audits.block-device-driver]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.2.0"
 
 [[audits.embedded-batteries]]
 who = "Felipe Balbi <febalbi@microsoft.com>"
@@ -47,6 +62,11 @@ who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-deploy"
 delta = "2.5.0 -> 2.6.0"
 notes = "Big change seems to be a change in the repo URL, but both the old and new URL resolve to the same place so it looks like the author is still in control."
+
+[[audits.indexmap]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "2.9.0"
 
 [[audits.itertools]]
 who = "Felipe Balbi <febalbi@microsoft.com>"
@@ -93,6 +113,21 @@ version = "1.45.0"
 who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-run"
 version = "2.5.0"
+
+[[audits.toml]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.8.22"
+
+[[audits.toml_datetime]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.6.9"
+
+[[audits.toml_edit]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.22.26"
 
 [[audits.windows-targets]]
 who = "Robert Zieba <robertzieba@microsoft.com>"
@@ -143,6 +178,11 @@ version = "0.52.6"
 who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-run"
 version = "0.52.6"
+
+[[audits.winnow]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.7.10"
 
 [[trusted.anyhow]]
 criteria = "safe-to-deploy"
