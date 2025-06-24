@@ -43,12 +43,6 @@ audit-as-crates-io = false
 [policy.embassy-time-queue-utils]
 audit-as-crates-io = false
 
-[policy.embedded-batteries]
-audit-as-crates-io = false
-
-[policy.embedded-batteries-async]
-audit-as-crates-io = false
-
 [[exemptions.ahash]]
 version = "0.8.11"
 criteria = "safe-to-deploy"
@@ -295,10 +289,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.paste]]
 version = "1.0.15"
-criteria = "safe-to-deploy"
-
-[[exemptions.pin-project-lite]]
-version = "0.2.16"
 criteria = "safe-to-deploy"
 
 [[exemptions.pin-utils]]
