@@ -32,24 +32,10 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "ODP crates are always trusted."
 
-[[audits.embedded-batteries]]
-who = "Felipe Balbi <febalbi@microsoft.com>"
-criteria = "safe-to-deploy"
-version = "0.1.0@git:410e2482d54b58c205a425c70d2ccf062e3ee3f3"
-importable = false
-notes = "ODP crates are always trusted."
-
 [[audits.embedded-batteries-async]]
 who = "Felipe Balbi <febalbi@microsoft.com>"
 criteria = "safe-to-deploy"
 version = "0.1.0"
-notes = "ODP crates are always trusted."
-
-[[audits.embedded-batteries-async]]
-who = "Felipe Balbi <febalbi@microsoft.com>"
-criteria = "safe-to-deploy"
-version = "0.1.0@git:410e2482d54b58c205a425c70d2ccf062e3ee3f3"
-importable = false
 notes = "ODP crates are always trusted."
 
 [[audits.gimli]]
@@ -84,6 +70,11 @@ who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-run"
 version = "2.7.4"
 
+[[audits.mimxrt600-fcb]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.2.2"
+
 [[audits.mimxrt633s-pac]]
 who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-deploy"
@@ -93,6 +84,11 @@ version = "0.4.0"
 who = "Robert Zieba <robertzieba@microsoft.com>"
 criteria = "safe-to-deploy"
 version = "0.4.1"
+
+[[audits.mimxrt685s-pac]]
+who = "jerrysxie <jerryxie@microsoft.com>"
+criteria = "safe-to-deploy"
+version = "0.4.0"
 
 [[audits.miniz_oxide]]
 who = "Robert Zieba <robertzieba@microsoft.com>"
@@ -194,3 +190,99 @@ criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-10-05"
 end = "2026-04-16"
+
+[[trusted.atomic-polyfill]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2021-03-04"
+end = "2026-06-30"
+
+[[trusted.bincode]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-04-08"
+end = "2026-06-30"
+
+[[trusted.critical-section]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2021-05-09"
+end = "2026-06-30"
+
+[[trusted.embedded-hal]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2022-09-28"
+end = "2026-06-30"
+
+[[trusted.embedded-hal-async]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2023-07-04"
+end = "2026-06-30"
+
+[[trusted.embedded-hal-nb]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2023-07-04"
+end = "2026-06-30"
+
+[[trusted.embedded-io]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2022-05-06"
+end = "2026-06-30"
+
+[[trusted.embedded-io-async]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2023-07-04"
+end = "2026-06-30"
+
+[[trusted.heapless]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2023-11-08"
+end = "2026-06-30"
+
+[[trusted.paste]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-03-19"
+end = "2026-06-30"
+
+[[trusted.proc-macro2]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-04-23"
+end = "2026-06-30"
+
+[[trusted.semver]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2021-05-25"
+end = "2026-06-30"
+
+[[trusted.syn]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-03-01"
+end = "2026-06-30"
+
+[[trusted.thiserror]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-10-09"
+end = "2026-06-30"
+
+[[trusted.thiserror-impl]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-10-09"
+end = "2026-06-30"
+
+[[trusted.volatile-register]]
+criteria = "safe-to-deploy"
+user-id = 92139 # Dario Nieuwenhuis (Dirbaio)
+start = "2023-10-20"
+end = "2026-06-30"

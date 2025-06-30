@@ -8,12 +8,103 @@ user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
 
+[[publisher.atomic-polyfill]]
+version = "1.0.3"
+when = "2023-07-11"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.critical-section]]
+version = "1.2.0"
+when = "2024-10-16"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.embedded-hal-async]]
+version = "1.0.0"
+when = "2024-01-09"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.embedded-hal-nb]]
+version = "1.0.0"
+when = "2024-01-09"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.embedded-io]]
+version = "0.6.1"
+when = "2023-10-22"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.embedded-io-async]]
+version = "0.6.1"
+when = "2023-11-29"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
 [[publisher.encoding_rs]]
 version = "0.8.35"
 when = "2024-10-24"
 user-id = 4484
 user-login = "hsivonen"
 user-name = "Henri Sivonen"
+
+[[publisher.heapless]]
+version = "0.7.17"
+when = "2023-12-04"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.heapless]]
+version = "0.8.0"
+when = "2023-11-08"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
+[[publisher.paste]]
+version = "1.0.15"
+when = "2024-05-07"
+user-id = 3618
+user-login = "dtolnay"
+user-name = "David Tolnay"
+
+[[publisher.proc-macro2]]
+version = "1.0.95"
+when = "2025-04-16"
+user-id = 3618
+user-login = "dtolnay"
+user-name = "David Tolnay"
+
+[[publisher.syn]]
+version = "2.0.100"
+when = "2025-03-09"
+user-id = 3618
+user-login = "dtolnay"
+user-name = "David Tolnay"
+
+[[publisher.thiserror]]
+version = "2.0.12"
+when = "2025-03-03"
+user-id = 3618
+user-login = "dtolnay"
+user-name = "David Tolnay"
+
+[[publisher.thiserror-impl]]
+version = "2.0.12"
+when = "2025-03-03"
+user-id = 3618
+user-login = "dtolnay"
+user-name = "David Tolnay"
 
 [[publisher.unicode-segmentation]]
 version = "1.12.0"
@@ -22,7 +113,62 @@ user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
 
+[[publisher.volatile-register]]
+version = "0.2.2"
+when = "2023-10-20"
+user-id = 92139
+user-login = "Dirbaio"
+user-name = "Dario Nieuwenhuis"
+
 [audits.OpenDevicePartnership.audits]
+
+[audits.actix.audits]
+
+[[audits.bytecode-alliance.audits.cobs]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.2.3"
+notes = "No `unsafe` code in the crate and no usage of `std`"
+
+[[audits.bytecode-alliance.audits.futures-core]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.3.27"
+notes = "Unsafe used to implement a concurrency primitive AtomicWaker. Well-commented and not obviously incorrect. Like my other audits of these concurrency primitives inside the futures family, I couldn't certify that it is correct without formal methods, but that is out of scope for this vetting."
+
+[[audits.bytecode-alliance.audits.futures-core]]
+who = "Pat Hickey <pat@moreproductive.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.28 -> 0.3.31"
+
+[[audits.bytecode-alliance.audits.futures-sink]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.3.27"
+
+[[audits.bytecode-alliance.audits.futures-sink]]
+who = "Pat Hickey <pat@moreproductive.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.28 -> 0.3.31"
+
+[[audits.bytecode-alliance.audits.pin-utils]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
+
+[[audits.embark-studios.audits.ident_case]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.1"
+notes = "No unsafe usage or ambient capabilities"
+
+[[audits.embark-studios.audits.tap]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.1"
+notes = "No unsafe usage or ambient capabilities"
+
+[audits.fermyon.audits]
 
 [[audits.google.audits.adler2]]
 who = "Lukasz Anforowicz <lukasza@chromium.org>"
@@ -206,64 +352,6 @@ who = "Lukasz Anforowicz <lukasza@chromium.org>"
 criteria = "safe-to-deploy"
 delta = "1.14.0 -> 1.15.0"
 notes = "The delta in `lib.rs` only tweaks doc comments and `#[cfg(feature = \"std\")]`."
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.equivalent]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-deploy"
-version = "1.0.1"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
-[[audits.google.audits.equivalent]]
-who = "Jonathan Hao <phao@chromium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.1 -> 1.0.2"
-notes = "No changes to any .rs files or Rust code."
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.itoa]]
-who = "Lukasz Anforowicz <lukasza@chromium.org>"
-criteria = "safe-to-deploy"
-version = "1.0.10"
-notes = '''
-I grepped for \"crypt\", \"cipher\", \"fs\", \"net\" - there were no hits.
-
-There are a few places where `unsafe` is used.  Unsafe review notes can be found
-in https://crrev.com/c/5350697.
-
-Version 1.0.1 of this crate has been added to Chromium in
-https://crrev.com/c/3321896.
-'''
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.itoa]]
-who = "Lukasz Anforowicz <lukasza@chromium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.10 -> 1.0.11"
-notes = """
-Straightforward diff between 1.0.10 and 1.0.11 - only 3 commits:
-
-* Bumping up the version
-* A touch up of comments
-* And my own PR to make `unsafe` blocks more granular:
-  https://github.com/dtolnay/itoa/pull/42
-"""
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.itoa]]
-who = "Liza Burakova <liza@chromium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.11 -> 1.0.14"
-notes = """
-Unsafe review at https://crrev.com/c/6051067
-"""
-aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.itoa]]
-who = "Daniel Cheng <dcheng@chromium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.14 -> 1.0.15"
-notes = "Only minor rustdoc changes."
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
 
 [[audits.google.audits.nb]]
@@ -690,6 +778,8 @@ criteria = "safe-to-deploy"
 version = "1.0.2"
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
+[audits.isrg.audits]
+
 [[audits.mozilla.wildcard-audits.encoding_rs]]
 who = "Henri Sivonen <hsivonen@hsivonen.fi>"
 criteria = "safe-to-deploy"
@@ -706,6 +796,12 @@ user-id = 1139 # Manish Goregaokar (Manishearth)
 start = "2019-05-15"
 end = "2026-02-01"
 notes = "All code written or reviewed by Manish"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.arraydeque]]
+who = "Lars Eggert <lars@eggert.org>"
+criteria = "safe-to-deploy"
+version = "0.5.1"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.crunchy]]
@@ -743,6 +839,18 @@ who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
 version = "1.0.7"
 notes = "Simple hasher implementation with no unsafe code."
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.futures-core]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.futures-sink]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.half]]
@@ -795,3 +903,5 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.10.0 -> 0.11.1"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[audits.zcash.audits]
