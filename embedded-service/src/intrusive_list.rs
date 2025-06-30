@@ -2,8 +2,7 @@
 
 // Any type used for dynamic type coercion
 pub use core::any::Any;
-
-use crate::sync_cell::SyncCell;
+use core::cell::Cell;
 
 /// Interface error class information
 #[derive(Copy, Clone, Debug)]
@@ -28,10 +27,14 @@ pub struct IntrusiveNode {
     valid: bool,
 }
 
+unsafe impl Sync for IntrusiveNode {}
+
 /// node type for list allocation. Embed this in the "list wrapper" object, and init with Node::uninit()
 pub struct Node {
-    inner: SyncCell<IntrusiveNode>,
+    inner: Cell<IntrusiveNode>,
 }
+
+unsafe impl Sync for Node {}
 
 struct Invalid {}
 
@@ -48,7 +51,7 @@ impl Node {
     /// construct an uninitialized node in place
     pub const fn uninit() -> Node {
         Node {
-            inner: SyncCell::new(Node::EMPTY),
+            inner: Cell::new(Node::EMPTY),
         }
     }
 }
@@ -62,8 +65,10 @@ pub trait NodeContainer: Any {
 /// List of intruded nodes of unknown type(s), must be allocated statically
 pub struct IntrusiveList {
     /// traditional head pointer on list. Static reference type is used to ensure static allocations (for safety)
-    head: SyncCell<Option<&'static IntrusiveNode>>,
+    head: Cell<Option<&'static IntrusiveNode>>,
 }
+
+unsafe impl Sync for IntrusiveList {}
 
 impl IntrusiveNode {
     /// generate an empty node for use within whatever type T
@@ -95,9 +100,7 @@ impl Default for IntrusiveList {
 impl IntrusiveList {
     /// construct an empty intrusive list
     pub const fn new() -> IntrusiveList {
-        IntrusiveList {
-            head: SyncCell::new(None),
-        }
+        IntrusiveList { head: Cell::new(None) }
     }
 
     /// only allow pushing to the head of the list
@@ -216,12 +219,12 @@ mod test {
 
     struct RegistrationA {
         node: Node,
-        owner: SyncCell<Option<&'static dyn OpA>>,
+        owner: Cell<Option<&'static dyn OpA>>,
     }
 
     struct RegistrationB {
         node: Node,
-        owner: SyncCell<Option<&'static dyn OpB>>,
+        owner: Cell<Option<&'static dyn OpB>>,
     }
 
     impl NodeContainer for RegistrationA {
@@ -253,7 +256,7 @@ mod test {
         fn new() -> Self {
             Self {
                 node: Node::uninit(),
-                owner: SyncCell::new(None),
+                owner: Cell::new(None),
             }
         }
 
@@ -270,7 +273,7 @@ mod test {
         fn new() -> Self {
             Self {
                 node: Node::uninit(),
-                owner: SyncCell::new(None),
+                owner: Cell::new(None),
             }
         }
 

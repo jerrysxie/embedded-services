@@ -1,13 +1,13 @@
 //! Comms Service Definitions
 
 use core::any::{Any, TypeId};
+use core::cell::Cell;
 use core::convert::Infallible;
 
 use embassy_sync::once_lock::OnceLock;
 use serde::{Deserialize, Serialize};
 
 use crate::intrusive_list::{self, Node, NodeContainer};
-use crate::sync_cell::SyncCell;
 use crate::IntrusiveList;
 
 /// key type for OEM Endpoint declarations
@@ -185,8 +185,10 @@ pub enum MailboxDelegateError {
 pub struct Endpoint {
     node: Node,
     id: EndpointID,
-    delegator: SyncCell<Option<&'static dyn MailboxDelegate>>,
+    delegator: Cell<Option<&'static dyn MailboxDelegate>>,
 }
+
+unsafe impl Sync for Endpoint {}
 
 impl NodeContainer for Endpoint {
     fn get_node(&self) -> &Node {
@@ -205,7 +207,7 @@ impl Endpoint {
         Self {
             node: Node::uninit(),
             id,
-            delegator: SyncCell::new(None),
+            delegator: Cell::new(None),
         }
     }
 
