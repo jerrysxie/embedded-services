@@ -570,7 +570,7 @@ dependencies = [
  "nb 1.1.0",
  "paste",
  "rand_core",
- "storage_bus 0.1.0",
+ "storage_bus",
 ]
 
 [[package]]
@@ -1349,18 +1349,6 @@ version = "0.1.0"
 source = "git+https://github.com/OpenDevicePartnership/embedded-mcu#004ccaa45d341a56073360b0764d2a538d46780d"
 
 [[package]]
-name = "storage_bus"
-version = "0.1.1"
-dependencies = [
- "defmt 0.3.100",
- "embassy-executor",
- "embassy-sync",
- "embassy-time",
- "embedded-services",
- "log",
-]
-
-[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1497,6 +1485,7 @@ dependencies = [
  "embedded-services",
  "embedded-usb-pd",
  "log",
+ "tokio",
  "tps6699x",
 ]
 
