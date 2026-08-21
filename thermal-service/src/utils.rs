@@ -46,3 +46,48 @@ impl<const N: usize> SampleBuf<u16, N> {
         sum.checked_div(self.deque.len() as u32).unwrap_or(0) as u16
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::SampleBuf;
+
+    #[test]
+    fn empty_float_buffer_returns_default_values() {
+        let samples = SampleBuf::<f32, 3>::create();
+
+        assert_eq!(samples.recent(), 0.0);
+        assert_eq!(samples.average(), 0.0);
+    }
+
+    #[test]
+    fn float_buffer_reports_recent_and_average_samples() {
+        let mut samples = SampleBuf::<f32, 3>::create();
+        samples.push(2.0);
+        samples.push(4.0);
+        samples.push(6.0);
+
+        assert_eq!(samples.recent(), 6.0);
+        assert_eq!(samples.average(), 4.0);
+    }
+
+    #[test]
+    fn full_buffer_evicts_oldest_sample() {
+        let mut samples = SampleBuf::<u16, 3>::create();
+        samples.push(2);
+        samples.push(4);
+        samples.push(6);
+        samples.push(8);
+
+        assert_eq!(samples.recent(), 8);
+        assert_eq!(samples.average(), 6);
+    }
+
+    #[test]
+    fn integer_average_uses_wider_accumulator() {
+        let mut samples = SampleBuf::<u16, 2>::create();
+        samples.push(u16::MAX);
+        samples.push(u16::MAX);
+
+        assert_eq!(samples.average(), u16::MAX);
+    }
+}

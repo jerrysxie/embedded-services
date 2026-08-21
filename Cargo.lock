@@ -1922,6 +1922,7 @@ dependencies = [
 name = "thermal-service"
 version = "0.1.0"
 dependencies = [
+ "critical-section",
  "defmt 0.3.100",
  "embassy-futures",
  "embassy-sync",
@@ -1933,6 +1934,7 @@ dependencies = [
  "log",
  "odp-service-common",
  "thermal-service-interface",
+ "tokio",
 ]
 
 [[package]]
