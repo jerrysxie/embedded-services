@@ -386,3 +386,245 @@ async fn immediate_temperature_retries_timed_out_bus_operation() {
         Err(sensor::Error::RetryExhausted)
     );
 }
+
+#[tokio::test]
+async fn immediate_temperature_ignores_offset() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::from([Ok(30.0)]),
+    };
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, _runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                offset: 5.0,
+                retry_attempts: 1,
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    // Offset is only applied to periodically sampled readings, not immediate ones.
+    assert_eq!(service.temperature_immediate().await, Ok(30.0));
+}
+
+#[tokio::test]
+async fn threshold_getter_returns_configured_values() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::new(),
+    };
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, _runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                warn_low_threshold: 5.0,
+                warn_high_threshold: 60.0,
+                prochot_threshold: 80.0,
+                critical_threshold: 95.0,
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(service.threshold(sensor::Threshold::WarnLow).await, 5.0);
+    assert_eq!(service.threshold(sensor::Threshold::WarnHigh).await, 60.0);
+    assert_eq!(service.threshold(sensor::Threshold::Prochot).await, 80.0);
+    assert_eq!(service.threshold(sensor::Threshold::Critical).await, 95.0);
+
+    service.set_threshold(sensor::Threshold::WarnHigh, 70.0).await;
+    assert_eq!(service.threshold(sensor::Threshold::WarnHigh).await, 70.0);
+}
+
+#[tokio::test]
+async fn set_sample_period_takes_effect() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::from([Ok(20.0), Ok(21.0)]),
+    };
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            // A one second sample period would let only the first reading through before the
+            // test times out; shortening it must let the runner reach the second reading.
+            config: Config {
+                sample_period: Duration::from_secs(1),
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    service.set_sample_period(Duration::from_millis(1)).await;
+
+    let assertion = async {
+        loop {
+            if service.temperature().await == 21.0 {
+                break;
+            }
+            embassy_time::Timer::after_millis(1).await;
+        }
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn fast_sampling_threshold_uses_fast_period() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::from([Ok(80.0), Ok(81.0)]),
+    };
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            // The slow period is long enough that only the fast period lets the runner reach
+            // the second reading before the test times out.
+            config: Config {
+                sample_period: Duration::from_secs(10),
+                fast_sample_period: Duration::from_millis(1),
+                fast_sampling_threshold: 50.0,
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    let assertion = async {
+        loop {
+            if service.temperature().await == 81.0 {
+                break;
+            }
+            embassy_time::Timer::after_millis(1).await;
+        }
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn runner_broadcasts_events_to_all_senders() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::from([Ok(50.0)]),
+    };
+    let first_channel = Channel::<GlobalRawMutex, sensor::Event, 4>::new();
+    let second_channel = Channel::<GlobalRawMutex, sensor::Event, 4>::new();
+    let mut event_senders = [first_channel.sender(), second_channel.sender()];
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let (_service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                sample_period: Duration::from_secs(1),
+                warn_high_threshold: 42.0,
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    let assertion = async {
+        assert_eq!(
+            first_channel.receive().await,
+            sensor::Event::ThresholdExceeded(sensor::Threshold::WarnHigh)
+        );
+        assert_eq!(
+            second_channel.receive().await,
+            sensor::Event::ThresholdExceeded(sensor::Threshold::WarnHigh)
+        );
+    };
+
+    let result = with_timeout(Duration::from_millis(100), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn runner_clears_prochot_and_critical_after_hysteresis() {
+    let driver = ScriptedSensor {
+        readings: VecDeque::from([Ok(50.0), Ok(30.0)]),
+    };
+    let event_channel = Channel::<GlobalRawMutex, sensor::Event, 8>::new();
+    let mut event_senders = [event_channel.sender()];
+    let mut resources = Resources::<ScriptedSensor, 4>::default();
+    let (_service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                sample_period: Duration::from_millis(1),
+                prochot_threshold: 40.0,
+                critical_threshold: 45.0,
+                hysteresis: 2.0,
+                ..Default::default()
+            },
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    let assertion = async {
+        assert_eq!(
+            event_channel.receive().await,
+            sensor::Event::ThresholdExceeded(sensor::Threshold::Prochot)
+        );
+        assert_eq!(
+            event_channel.receive().await,
+            sensor::Event::ThresholdExceeded(sensor::Threshold::Critical)
+        );
+        assert_eq!(
+            event_channel.receive().await,
+            sensor::Event::ThresholdCleared(sensor::Threshold::Prochot)
+        );
+        assert_eq!(
+            event_channel.receive().await,
+            sensor::Event::ThresholdCleared(sensor::Threshold::Critical)
+        );
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}

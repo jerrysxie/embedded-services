@@ -32,6 +32,7 @@ impl embedded_fans_async::Error for TestError {
 struct FanState {
     rpm: u16,
     fail_commands: bool,
+    fail_rpm_reads: bool,
     requested_rpms: Vec<u16>,
     rpm_readings: VecDeque<u16>,
 }
@@ -70,15 +71,14 @@ impl Fan for TestFan {
 
 impl RpmSense for TestFan {
     async fn rpm(&mut self) -> Result<u16, Self::Error> {
-        self.state
-            .lock()
-            .map(|mut state| {
-                if let Some(rpm) = state.rpm_readings.pop_front() {
-                    state.rpm = rpm;
-                }
-                state.rpm
-            })
-            .map_err(|_| TestError)
+        let mut state = self.state.lock().map_err(|_| TestError)?;
+        if state.fail_rpm_reads {
+            return Err(TestError);
+        }
+        if let Some(rpm) = state.rpm_readings.pop_front() {
+            state.rpm = rpm;
+        }
+        Ok(state.rpm)
     }
 }
 
@@ -480,4 +480,216 @@ async fn state_temperatures_can_be_configured_independently() {
     assert_eq!(service.state_temp(fan::OnState::Min).await, 20.0);
     assert_eq!(service.state_temp(fan::OnState::Ramping).await, 40.0);
     assert_eq!(service.state_temp(fan::OnState::Max).await, 60.0);
+}
+
+#[tokio::test]
+async fn auto_control_cools_down_through_hysteresis_to_off() {
+    let driver_state = Arc::new(Mutex::new(FanState::default()));
+    let driver = TestFan {
+        state: Arc::clone(&driver_state),
+    };
+    // Ramp up to max, then descend past each state's hysteresis band back down to off.
+    let sensor = ScriptedSensor {
+        temperatures: Arc::new(Mutex::new(VecDeque::from([45.0, 45.0, 45.0, 30.0, 30.0, 20.0]))),
+        fallback: 20.0,
+    };
+    let mut resources = Resources::<TestFan, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (_service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                update_period: Duration::from_millis(1),
+                ..Default::default()
+            },
+            sensor_service: sensor,
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    let assertion = async {
+        loop {
+            let requested_rpms = driver_state.lock().unwrap().requested_rpms.clone();
+            if requested_rpms.len() >= 4 {
+                assert_eq!(requested_rpms, [1_500, 6_000, 1_500, 0]);
+                break;
+            }
+            embassy_time::Timer::after_millis(1).await;
+        }
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn set_rpm_update_period_takes_effect() {
+    let driver_state = Arc::new(Mutex::new(FanState::default()));
+    let driver = TestFan {
+        state: Arc::clone(&driver_state),
+    };
+    let mut resources = Resources::<TestFan, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            // A ten second update period would let only the first transition through before the
+            // test times out; shortening it must let auto control reach the max state.
+            config: Config {
+                update_period: Duration::from_secs(10),
+                ..Default::default()
+            },
+            sensor_service: FixedSensor(45.0),
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    service.set_rpm_update_period(Duration::from_millis(1)).await;
+
+    let assertion = async {
+        loop {
+            let requested_rpms = driver_state.lock().unwrap().requested_rpms.clone();
+            if requested_rpms.len() >= 2 {
+                assert_eq!(requested_rpms, [1_500, 6_000]);
+                break;
+            }
+            embassy_time::Timer::after_millis(1).await;
+        }
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn set_rpm_sampling_period_takes_effect() {
+    let driver = TestFan {
+        state: Arc::new(Mutex::new(FanState {
+            rpm_readings: VecDeque::from([1_000, 2_000, 3_000]),
+            ..Default::default()
+        })),
+    };
+    let mut resources = Resources::<TestFan, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            // A ten second sampling period would let only the first reading through before the
+            // test times out; shortening it must let the runner reach the later readings.
+            config: Config {
+                sample_period: Duration::from_secs(10),
+                auto_control: false,
+                ..Default::default()
+            },
+            sensor_service: FixedSensor(30.0),
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    service.set_rpm_sampling_period(Duration::from_millis(1)).await;
+
+    let assertion = async {
+        loop {
+            if service.rpm().await == 3_000 {
+                break;
+            }
+            embassy_time::Timer::after_millis(1).await;
+        }
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
+}
+
+#[tokio::test]
+async fn rpm_immediate_maps_driver_failure_to_hardware_error() {
+    let driver = TestFan {
+        state: Arc::new(Mutex::new(FanState {
+            fail_rpm_reads: true,
+            ..Default::default()
+        })),
+    };
+    let mut resources = Resources::<TestFan, 4>::default();
+    let mut event_senders: [NoopSender; 0] = [];
+    let (service, _runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config::default(),
+            sensor_service: FixedSensor(30.0),
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(service.rpm_immediate().await, Err(fan::Error::Hardware));
+}
+
+#[tokio::test]
+async fn runner_broadcasts_events_to_all_senders() {
+    let driver = TestFan {
+        state: Arc::new(Mutex::new(FanState {
+            fail_commands: true,
+            ..Default::default()
+        })),
+    };
+    let first_channel = Channel::<GlobalRawMutex, fan::Event, 1>::new();
+    let second_channel = Channel::<GlobalRawMutex, fan::Event, 1>::new();
+    let mut event_senders = [first_channel.sender(), second_channel.sender()];
+    let mut resources = Resources::<TestFan, 4>::default();
+    let (_service, runner) = Service::new(
+        &mut resources,
+        InitParams {
+            driver,
+            config: Config {
+                update_period: Duration::from_millis(1),
+                ..Default::default()
+            },
+            sensor_service: FixedSensor(30.0),
+            event_senders: &mut event_senders,
+        },
+    )
+    .await
+    .unwrap();
+
+    let assertion = async {
+        assert_eq!(first_channel.receive().await, fan::Event::Failure(fan::Error::Hardware));
+        assert_eq!(
+            second_channel.receive().await,
+            fan::Event::Failure(fan::Error::Hardware)
+        );
+    };
+
+    let result = with_timeout(Duration::from_millis(200), select(runner.run(), assertion))
+        .await
+        .unwrap();
+    match result {
+        Either::First(never) => match never {},
+        Either::Second(()) => {}
+    }
 }
