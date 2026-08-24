@@ -388,7 +388,7 @@ async fn immediate_temperature_retries_timed_out_bus_operation() {
 }
 
 #[tokio::test]
-async fn immediate_temperature_ignores_offset() {
+async fn immediate_temperature_applies_offset() {
     let driver = ScriptedSensor {
         readings: VecDeque::from([Ok(30.0)]),
     };
@@ -409,8 +409,7 @@ async fn immediate_temperature_ignores_offset() {
     .await
     .unwrap();
 
-    // Offset is only applied to periodically sampled readings, not immediate ones.
-    assert_eq!(service.temperature_immediate().await, Ok(30.0));
+    assert_eq!(service.temperature_immediate().await, Ok(35.0));
 }
 
 #[tokio::test]

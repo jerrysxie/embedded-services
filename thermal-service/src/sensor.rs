@@ -134,7 +134,8 @@ impl<'hw, T: sensor::Driver, E: NonBlockingSender<sensor::Event>, const SAMPLE_B
     }
 
     async fn temperature_immediate(&self) -> Result<DegreesCelsius, sensor::Error> {
-        with_retry!(self.inner, self.inner.driver.lock().await.temperature())
+        let temperature = with_retry!(self.inner, self.inner.driver.lock().await.temperature())?;
+        Ok(temperature + self.inner.config.lock().await.offset)
     }
 
     async fn set_threshold(&self, threshold: sensor::Threshold, value: DegreesCelsius) {
