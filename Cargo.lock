@@ -1080,6 +1080,7 @@ dependencies = [
 name = "hidi2c-target-service"
 version = "0.1.0"
 dependencies = [
+ "critical-section",
  "defmt 0.3.100",
  "embassy-futures",
  "embassy-sync",
@@ -1091,6 +1092,7 @@ dependencies = [
  "log",
  "num_enum",
  "odp-service-common",
+ "tokio",
  "typenum",
  "zerocopy",
 ]
