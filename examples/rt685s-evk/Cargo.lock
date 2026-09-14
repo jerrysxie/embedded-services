@@ -694,7 +694,7 @@ dependencies = [
 [[package]]
 name = "espi-device"
 version = "0.1.0"
-source = "git+https://github.com/OpenDevicePartnership/haf-ec-service#2d520884a72a3d88d1ac5dd70461f8fae71c34a9"
+source = "git+https://github.com/OpenDevicePartnership/haf-ec-service#a0748ef149c4518e057ee71e80035b6a2324a750"
 dependencies = [
  "bit-register 0.1.0 (git+https://github.com/OpenDevicePartnership/odp-utilities?tag=v0.1.0)",
  "bitflags 2.11.1",
@@ -1425,7 +1425,7 @@ dependencies = [
 [[package]]
 name = "tps6699x"
 version = "0.1.0"
-source = "git+https://github.com/OpenDevicePartnership/tps6699x#7544070c272c54a3f47dc9f0c52dc750e8b7dbb3"
+source = "git+https://github.com/OpenDevicePartnership/tps6699x#3001309250c68ef383412614845a9e7360c18710"
 dependencies = [
  "bincode",
  "bitfield 0.19.4",
