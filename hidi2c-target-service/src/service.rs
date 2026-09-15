@@ -5,7 +5,7 @@ use embassy_time::{Duration, with_timeout};
 use embedded_mcu_hal::i2c::target::asynch::I2c as I2cTargetAsync;
 use embedded_mcu_hal::i2c::target::{ReadStatus, Request, WriteStatus};
 use embedded_services::relay::hid;
-use embedded_services::relay::hid::{GetHidReport, GetHidReportType, HidError, HidReport, SetHidReport};
+use embedded_services::relay::hid::{GetHidReportType, HidError, HidReport, SetHidReport};
 use zerocopy::IntoBytes;
 
 /// HID-I2C Command Opcode as specified in section 7.1.1 of the HID-I2C spec
@@ -605,7 +605,6 @@ impl<
                 trace!("Processing get report command");
 
                 let (report_type, report_id, _data) = Self::get_io_command_report_header(data, command_byte).await?;
-                let report_ids_implicit = hid_device.report_descriptor().report_ids_implicit();
 
                 // TODO - here, if the report ID is invalid, we're supposed to return a zero-length report.  We should know from the
                 //        report descriptor whether the report ID is valid or not, but we don't yet have the report descriptor parsing
@@ -615,23 +614,11 @@ impl<
 
                 hid_device
                     .process_get_report(report_type.try_into()?, report_id, async |report| {
-                        let (report_id, report_data) = match &report {
-                            GetHidReport::Input(report) | GetHidReport::Feature(report) => (report.id(), report.data()),
-                        };
+                        // Note: per HID spec, the length field needs to include its own length (2 bytes)
                         let len_header = (report.data().len() as u16 + device_descriptor::HID_REPORT_HEADER_SIZE_BYTES)
-                            + if report_ids_implicit {
-                                0
-                            } else {
-                                device_descriptor::HID_REPORT_ID_SIZE_BYTES
-                            };
-                        let [size_low, size_high] = len_header.to_le_bytes();
-                        let header_slice: &[u8] = if report_ids_implicit {
-                            &[size_low, size_high]
-                        } else {
-                            &[size_low, size_high, report_id.0]
-                        };
-                        bus.write_unterminated(header_slice).await?;
-                        bus.write(report_data).await?;
+                            .to_le_bytes();
+                        bus.write_unterminated(&len_header).await?;
+                        bus.write(report.data()).await?;
                         Ok::<(), Error<Bus::Error>>(())
                     })
                     .await??;
@@ -643,25 +630,13 @@ impl<
                 trace!("Processing set report command");
                 let (report_type, report_id, data) = Self::get_io_command_report_header(data, command_byte).await?;
 
-                let (&len_header, mut data) = data
+                let (&len_header, data) = data
                     .split_first_chunk::<{ core::mem::size_of::<u16>() }>()
                     .ok_or(Error::Protocol(ProtocolError::InvalidSize))?;
 
-                let report_id_size = if hid_device.report_descriptor().report_ids_implicit() {
-                    0
-                } else {
-                    let (&wire_report_id, remaining) =
-                        data.split_first().ok_or(Error::Protocol(ProtocolError::InvalidSize))?;
-                    if wire_report_id != report_id.0 {
-                        return Err(Error::Protocol(ProtocolError::InvalidData));
-                    }
-                    data = remaining;
-                    device_descriptor::HID_REPORT_ID_SIZE_BYTES
-                };
-
-                // The wire length includes its own field and the report ID, when one is present.
+                // Note: per HID spec, the length field relayed over the wire needs to include its own length (2 bytes)
                 let report_size = (u16::from_le_bytes(len_header)
-                    .checked_sub(device_descriptor::HID_REPORT_HEADER_SIZE_BYTES + report_id_size))
+                    .checked_sub(device_descriptor::HID_REPORT_HEADER_SIZE_BYTES))
                 .ok_or(Error::Protocol(ProtocolError::InvalidSize))? as usize;
 
                 let report_data = data
@@ -961,9 +936,8 @@ mod tests {
             Opcode::SetReport as u8,    // command high byte: SetReport opcode
             HidI2cRegister::Data as u8, // data register address, low byte (0x06)
             0x00,                       // data register address, high byte -> 0x0006
-            0x06,                       // length field, low byte
-            0x00,                       // length field, high byte -> 6 total bytes
-            0x03,                       // report ID echoed in the data payload (must match header)
+            0x05,                       // length field, low byte
+            0x00,                       // length field, high byte -> 5 total bytes
             0xaa,                       // report payload
             0xbb,
             0xcc,
@@ -991,9 +965,8 @@ mod tests {
             0x21,                       // extended report ID (0x21)
             HidI2cRegister::Data as u8, // data register address, low byte (0x06)
             0x00,                       // data register address, high byte -> 0x0006
-            0x04,                       // length field, low byte
-            0x00,                       // length field, high byte -> 4 total bytes
-            0x21,                       // report ID echoed in the data payload (must match header)
+            0x03,                       // length field, low byte
+            0x00,                       // length field, high byte -> 3 total bytes
             0x5a,                       // report payload
         ];
 
@@ -1026,27 +999,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn set_report_rejects_mismatched_wire_report_id() {
-        let mut bus = timeout_bus();
-        let mut device = recording_device();
-        let command = [
-            0x23,                       // command low byte: report type Output (0x2), inline report ID 3
-            Opcode::SetReport as u8,    // command high byte: SetReport opcode
-            HidI2cRegister::Data as u8, // data register address, low byte (0x06)
-            0x00,                       // data register address, high byte -> 0x0006
-            0x04,                       // length field, low byte
-            0x00,                       // length field, high byte -> 4 total bytes
-            0x04,                       // report ID in data payload = 4, mismatches header's 3 -> InvalidData
-            0x5a,                       // report payload
-        ];
-
-        let result =
-            Runner::<NoopBus, NoopPin, RecordingHidDevice>::process_command(&command, &mut bus, &mut device).await;
-
-        assert!(matches!(result, Err(Error::Protocol(ProtocolError::InvalidData))));
-    }
-
-    #[tokio::test]
     async fn get_report_rejects_output_report_type() {
         let mut bus = timeout_bus();
         let mut device = recording_device();
@@ -1064,9 +1016,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_feature_report_includes_explicit_report_id() {
+    async fn get_feature_report_excludes_explicit_report_id_from_payload() {
         let mut bus = scripted_timeout_bus(ScriptedBus {
-            read_statuses: VecDeque::from([ReadStatus::Complete(3), ReadStatus::Complete(1)]),
+            read_statuses: VecDeque::from([ReadStatus::Complete(2), ReadStatus::Complete(1)]),
             ..Default::default()
         });
         let mut device = recording_device();
@@ -1084,7 +1036,7 @@ mod tests {
 
         assert_eq!(
             bus.bus.outgoing_reads.first().map(Vec::as_slice),
-            Some(&[0x04, 0x00, 0x21][..])
+            Some(&[0x03, 0x00][..])
         );
         assert_eq!(bus.bus.outgoing_reads.get(1).map(Vec::as_slice), Some(&[0x5a][..]));
     }
